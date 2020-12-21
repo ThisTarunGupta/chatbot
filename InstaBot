@@ -1,0 +1,136 @@
+#!/usr/bin/python3
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+import os
+from login_details import login
+from KodinguBot import kodingu
+from time import sleep
+import datetime
+from random import choice
+
+class InstaBot:
+    def __init__(self, username, password):
+        try:
+            self.username = username
+            self.password = password
+            
+            #config Chrome
+            #chrome_options = Options()
+            #hrome_options.add_argument("--disable-extensions")
+            #chrome_options.add_argument("--disable-gpu")
+            #chrome_options.add_argument("--no-sandbox")
+            #chrome_options.add_argument("--headless")
+
+            #opens browser
+            self.driver = webdriver.Chrome()
+            self.driver.get('https://www.instagram.com/')
+            self.driver.implicitly_wait(10)
+
+            #login
+            self.driver.find_element_by_xpath('//input[@name=\"username\"]').send_keys(self.username)
+            self.driver.find_element_by_xpath('//input[@name=\"password\"]').send_keys(self.password)
+            self.driver.find_element_by_xpath('//button[@type="submit"]').click()
+            sleep(4)
+
+            self.driver.find_element_by_xpath("//button[contains(text(), 'Not Now')]").click()
+
+            try:
+                self.driver.find_element_by_xpath("//button[contains(text(), 'Not Now')]").click()
+            except:
+                print("working...")
+                
+            print("Working...")
+
+        except:
+            return
+
+    def requests(self):
+        try:
+            while True:
+                self.driver.refresh()
+                sleep(2)
+
+                self.driver.find_element_by_xpath('//*[@id="react-root"]/section/div/div[2]/div/div/div[1]/div[2]/div/div[2]/span/button/h5').click()
+
+                link = self.driver.find_elements_by_xpath('//a[@class="-qQT3 rOtsg"]')[0].click()
+                self.driver.find_element_by_xpath('//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div[2]/div[5]/button').click()
+                self.driver.find_element_by_xpath('//button[contains(text(), "Primary")]').click()
+                
+        except:
+            return
+
+    def ChatBot(self):
+        #direct message
+        self.driver.find_element_by_xpath("//a[contains(@href, '/direct/inbox')]").click()
+        self.driver.implicitly_wait(5)
+        flag = 0
+        
+        while datetime.datetime.now().hour < 21:
+            try:
+                if flag % 5 == 0:
+                    self.requests()
+                    
+                if flag == 5:
+                    flag = 0
+                else:
+                    flag += 1
+                
+                #check new message
+                link = self.driver.find_elements_by_xpath('//div[@style="height: 8px; width: 8px;"]')[0]
+                if link:
+                    link.click()
+                    self.driver.implicitly_wait(5)
+
+                    user = self.driver.find_element_by_xpath('//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[1]/div/div/div[2]/div/div[2]/button/div/div[1]/div').get_attribute("innerHTML")
+                    sleep(3)
+                    #get message
+                    messages = self.driver.find_elements_by_tag_name("span")
+                    message = messages[-1].get_attribute("innerHTML").lower()
+                    
+                    if message[0] == '/' and message[-1] != '?':
+                        #respond to message
+                        response = kodingu(self, message, user)
+
+                        if response == None:
+                            response = "Sorry. I can't get it. Use '/help'"
+
+                    else:
+                        response = "Command not found or Invalid syntax. Use '/' before command and don't use '?' after command. Try '/help'"
+
+                        if ',' in user:
+                            response = ""
+
+
+                    self.driver.find_element_by_xpath('//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[2]/textarea').send_keys(response)
+                    self.driver.find_element_by_xpath('//*[@id="react-root"]/section/div/div[2]/div/div/div[2]/div[2]/div/div[2]/div/div/div[3]/button').click()                
+
+                    self.driver.back()
+
+            except:
+                pass
+
+            self.driver.implicitly_wait(2)
+
+
+    def quit(self):
+        self.driver.quit()
+
+
+
+if __name__ == '__main__':
+    try:
+        while datetime.datetime.now().hour < 21:
+            bot = InstaBot(login['username'], login['password'])
+            bot.ChatBot()
+            
+        flag = 0
+
+    except:
+        print("not connected to internet...")
+        exit()
+
+    finally:
+        bot.quit()
+        if flag == 0:
+            os.system("sudo poweroff")
